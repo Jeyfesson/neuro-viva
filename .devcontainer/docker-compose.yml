@@ -1,14 +1,17 @@
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      # build from the repository root so package.json and source are available
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     volumes:
-      - ../..:/workspaces:cached
+      # mount the repository root into the container workspace
+      - ..:/workspace:cached
     command: sleep infinity
-    network_mode: service:db
+    depends_on:
+      - db
     environment:
-      - DB_HOST=localhost
+      - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=root_password
@@ -28,7 +31,6 @@ services:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "3000:3000"
       - "3306:3306"
 
 volumes:
