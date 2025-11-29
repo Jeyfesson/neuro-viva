@@ -35,18 +35,34 @@ async function run() {
       ) ENGINE=INNODB;
     `);
 
-    // insert sample category
-    const [cats] = await db.query("SELECT id FROM categorias WHERE nome = ?", [
-      "Geral",
-    ]);
-    let catId;
-    if (cats.length === 0) {
-      const [r] = await db.execute("INSERT INTO categorias (nome) VALUES (?)", [
-        "Geral",
-      ]);
-      catId = r.insertId;
-    } else {
-      catId = cats[0].id;
+    // inserir categorias iniciais
+    const categoriasIniciais = [
+      "TDAH",
+      "Autismo",
+      "Dislexia",
+      "Altas Habilidades / Superdotação",
+      "Psicopedagogia",
+      "Educação Inclusiva",
+      "Comportamento"
+    ];
+
+    let catId = null;
+
+    for (const nome of categoriasIniciais) {
+      const [existe] = await db.query(
+        "SELECT id FROM categorias WHERE nome = ?",
+        [nome]
+      );
+
+      if (existe.length === 0) {
+        const [r] = await db.execute(
+          "INSERT INTO categorias (nome) VALUES (?)",
+          [nome]
+        );
+        if (!catId) catId = r.insertId; // salva a primeira categoria como padrão
+      } else {
+        if (!catId) catId = existe[0].id;
+      }
     }
 
     // insert admin user if not exists
