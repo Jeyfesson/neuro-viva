@@ -1,7 +1,7 @@
 const express = require("express");
 const routerPublic = express.Router();
 const routerAdmin = express.Router();
-const InformacaoController = require("../controllers/InformacaoController");
+const InformacaoController = require("../controllers/");
 const asyncHandler = require("../middleware/asyncHandler");
 
 // Public routes
