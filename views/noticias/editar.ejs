@@ -1,7 +1,7 @@
 <%- include('../partials/admin_header', { titulo: titulo }) %>
 
 <section>
-  <h1><%= titulo %></h1>
+  <h1><%= informativo NeuroDivergencia %></h1>
   <form action="/admin/noticias/editar/<%= noticia.id %>" method="post">
     <label for="titulo">Título</label>
     <input id="titulo" name="titulo" value="<%= noticia.titulo %>" required />
