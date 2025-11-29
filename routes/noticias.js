@@ -1,8 +1,9 @@
 const express = require("express");
 const routerPublic = express.Router();
 const routerAdmin = express.Router();
-const InformacaoController = require("../controllers/");
+const InformacaoController = require("../controllers/NoticiaController");
 const asyncHandler = require("../middleware/asyncHandler");
+
 
 // Public routes
 routerPublic.get("/", asyncHandler(InformacaoController.indexPublic));
@@ -12,7 +13,7 @@ routerPublic.get(
   asyncHandler(InformacaoController.listarPorCategoria)
 );
 
-// Admin routes (these will be mounted under /admin/noticias)
+// Admin routes
 routerAdmin.get("/", asyncHandler(InformacaoController.listarAdmin));
 routerAdmin.get("/nova", asyncHandler(InformacaoController.novaForm));
 routerAdmin.post("/nova", asyncHandler(InformacaoController.criar));
