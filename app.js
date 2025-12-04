@@ -40,7 +40,7 @@ app.use(
   })
 );
 
-// Middleware global — passa variáveis pra todas as views
+// Middleware global — passa variáveis para todas as views
 app.use((req, res, next) => {
   res.locals.usuario = req.session.usuario || null;
   res.locals.mensagem = req.session.mensagem || null;
@@ -49,43 +49,30 @@ app.use((req, res, next) => {
 });
 
 // =========================
-// 🔐 MIDDLEWARES DE AUTENTICAÇÃO
+// 🔐 MIDDLEWARE DE LOGIN
 // =========================
 function verificaLogin(req, res, next) {
   if (!req.session.usuario) return res.redirect("/login");
   next();
 }
 
-function verificaAdmin(req, res, next) {
-  if (!req.session.usuario || req.session.usuario.perfil !== "admin") {
-    req.session.mensagem = {
-      tipo: "erro",
-      texto: "Acesso negado: admin apenas.",
-    };
-    return res.redirect("/");
-  }
-  next();
-}
-
 // =========================
-// 🌐 ROTAS PÚBLICAS E ADMIN
+// 🌐 ROTAS
 // =========================
-app.use("/", authRoutes); // login e registro
-app.use("/", noticiasRoutes.public); // rotas públicas de notícias
 
-// Rotas protegidas
-app.use("/admin/noticias", verificaLogin, noticiasRoutes.admin);
-app.use("/admin/usuarios", verificaLogin, verificaAdmin, usuariosRoutes);
-app.use("/admin/categorias", verificaLogin, verificaAdmin, categoriasRoutes);
+// Rotas públicas (login, registro, notícias públicas)
+app.use("/", authRoutes);
+app.use("/", noticiasRoutes.public);
 
-// Página principal (redireciona pro index de notícias)
+// Rotas protegidas — todos são iguais, basta estar logado
+app.use("/noticias", verificaLogin, noticiasRoutes.admin);
+app.use("/usuarios", verificaLogin, usuariosRoutes);
+app.use("/categorias", verificaLogin, categoriasRoutes);
+
+// Página inicial: redireciona para notícias
 app.get("/", (req, res) => {
-  res.redirect("/"); // redireciona para rota pública de notícias
-});
-
-// Painel Admin
-app.get("/admin", verificaLogin, (req, res) => {
-  res.render("admin/dashboard", { titulo: "Dashboard", layout: "admin" });
+  if (!req.session.usuario) return res.redirect("/login");
+  res.redirect("/noticias"); 
 });
 
 // =========================
@@ -111,14 +98,14 @@ const startServer = (port) => {
   server.on("error", (err) => {
     if (err.code === "EADDRINUSE") {
       console.log(`⚠️ Porta ${port} em uso, tentando porta ${port + 1}...`);
-      startServer(port + 1); // tenta a próxima porta
+      startServer(port + 1);
     } else {
       console.error("Erro ao iniciar o servidor:", err);
     }
   });
 };
 
-// Inicia na porta 3000 ou próxima livre
+// Inicia na porta 3000
 startServer(Number(process.env.PORT) || 3000);
 
 module.exports = app;
