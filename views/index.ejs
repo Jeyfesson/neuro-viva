@@ -1,35 +1,24 @@
-<%- include('partials/header', { titulo: 'Informações sobre Neurodivergência' }) %>
-
-<section class="informacoes-grid">
-  <h1 class="hero-title">Informações sobre Neurodivergência</h1>
-
-  <% if (noticias.length === 0) { %>
-    <p>Nenhuma informação encontrada.</p>
-  <% } else { %>
-
-  <div class="info-cards">
-    <% noticias.forEach(n => { %>
-    <article class="info-card">
-      <h2 class="info-title">
-        <a href="/noticia/<%= n.id %>"><%= n.titulo %></a>
-      </h2>
-
-      <p class="info-meta">
-        <span class="author">Por <%= n.autor %></span> •
-        <span class="date">
-          <%= new Date(n.data_publicacao).toLocaleDateString('pt-BR') %>
-        </span>
-        •
-        <span class="category"><%= n.categoria %></span>
-      </p>
-
-      <p class="info-excerpt"><%= n.resumo %>...</p>
-      <a href="/noticia/<%= n.id %>" class="read-more">Ler mais →</a>
-    </article>
-    <% }) %>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title><%= titulo %></title>
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+  <div class="container">
+    <div class="bloco">
+      <h1>Login</h1>
+      <form action="/login" method="POST">
+        <input type="text" name="username" placeholder="Usuário" required><br>
+        <input type="password" name="password" placeholder="Senha" required><br>
+        <button type="submit">Entrar</button>
+      </form>
+      <p>Não tem conta? <a href="/register">Cadastre-se</a></p>
+      <% if (mensagem) { %>
+        <p style="color:<%= mensagem.tipo === 'erro' ? 'red' : 'green' %>;"><%= mensagem.texto %></p>
+      <% } %>
+    </div>
   </div>
-
-  <% } %>
-</section>
-
-<%- include('partials/footer') %>
+</body>
+</html>
