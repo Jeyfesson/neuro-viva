@@ -1,18 +1,27 @@
+// =========================
+// 📦 IMPORTAÇÕES PRINCIPAIS
+// =========================
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
 require("dotenv").config();
 
+// =========================
+// 🚀 CONFIGURAÇÕES INICIAIS
+// =========================
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Routes
+// =========================
+// 🧩 ROTAS
+// =========================
 const authRoutes = require("./routes/auth");
 const noticiasRoutes = require("./routes/noticias");
 const usuariosRoutes = require("./routes/usuarios");
 const categoriasRoutes = require("./routes/categorias");
 
-// Middleware
+// =========================
+// ⚙️ MIDDLEWARES BÁSICOS
+// =========================
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -20,6 +29,9 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+// =========================
+// 💾 SESSÕES
+// =========================
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "segredo",
@@ -28,7 +40,7 @@ app.use(
   })
 );
 
-// set common locals and flash-like messages
+// Middleware global — passa variáveis pra todas as views
 app.use((req, res, next) => {
   res.locals.usuario = req.session.usuario || null;
   res.locals.mensagem = req.session.mensagem || null;
@@ -36,13 +48,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// auth routes
-app.use("/", authRoutes);
-
-// public news routes
-app.use("/", noticiasRoutes.public);
-
-// middleware to protect admin routes
+// =========================
+// 🔐 MIDDLEWARES DE AUTENTICAÇÃO
+// =========================
 function verificaLogin(req, res, next) {
   if (!req.session.usuario) return res.redirect("/login");
   next();
@@ -59,33 +67,58 @@ function verificaAdmin(req, res, next) {
   next();
 }
 
-// admin news routes (protected)
+// =========================
+// 🌐 ROTAS PÚBLICAS E ADMIN
+// =========================
+app.use("/", authRoutes); // login e registro
+app.use("/", noticiasRoutes.public); // rotas públicas de notícias
+
+// Rotas protegidas
 app.use("/admin/noticias", verificaLogin, noticiasRoutes.admin);
 app.use("/admin/usuarios", verificaLogin, verificaAdmin, usuariosRoutes);
 app.use("/admin/categorias", verificaLogin, verificaAdmin, categoriasRoutes);
 
-// Admin dashboard
+// Página principal (redireciona pro index de notícias)
+app.get("/", (req, res) => {
+  res.redirect("/"); // redireciona para rota pública de notícias
+});
+
+// Painel Admin
 app.get("/admin", verificaLogin, (req, res) => {
   res.render("admin/dashboard", { titulo: "Dashboard", layout: "admin" });
 });
 
-app.get("/", (req, res) => {
-  res.redirect("/"); // the noticias public router handles '/'
-});
-
-// Error handler (must be after routes)
+// =========================
+// ⚠️ TRATAMENTO DE ERROS
+// =========================
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.status || 500);
-  // render an error page if possible
   if (req.accepts("html")) {
     return res.render("error", { titulo: "Erro", error: err });
   }
   res.json({ error: "Internal Server Error" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+// =========================
+// 🧠 INICIALIZAÇÃO DO SERVIDOR (PORTA DINÂMICA)
+// =========================
+const startServer = (port) => {
+  const server = app.listen(port, () => {
+    console.log(`🚀 Servidor rodando na porta ${port}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.log(`⚠️ Porta ${port} em uso, tentando porta ${port + 1}...`);
+      startServer(port + 1); // tenta a próxima porta
+    } else {
+      console.error("Erro ao iniciar o servidor:", err);
+    }
+  });
+};
+
+// Inicia na porta 3000 ou próxima livre
+startServer(Number(process.env.PORT) || 3000);
 
 module.exports = app;
