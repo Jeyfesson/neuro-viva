@@ -8,7 +8,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
   else console.log("✅ Banco SQLite conectado:", dbPath);
 });
 
-// cria tabela se não existir
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS usuarios (
