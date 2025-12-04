@@ -1,84 +1,87 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
 const router = express.Router();
-const db = require("../config/db");
+const bcrypt = require("bcrypt");
+const path = require("path");
+const sqlite3 = require("sqlite3").verbose();
 
-// Página de login
+// Caminho do banco
+const dbPath = path.join(__dirname, "..", "database.sqlite");
+const db = new sqlite3.Database(dbPath);
+
+// ==========================
+// 🔐 Rota de login
+// =========================
 router.get("/login", (req, res) => {
   res.render("login", { titulo: "Login" });
 });
 
-// Página de cadastro
-router.get("/register", (req, res) => {
-  res.render("register", { titulo: "Cadastro" });
+router.post("/login", (req, res) => {
+  const { email, senha } = req.body;
+
+  db.get("SELECT * FROM usuarios WHERE email = ?", [email], (err, usuario) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro no servidor.");
+    }
+
+    if (!usuario) {
+      req.session.mensagem = { tipo: "erro", texto: "Usuário não encontrado." };
+      return res.redirect("/login");
+    }
+
+    // Verifica senha
+    if (!bcrypt.compareSync(senha, usuario.senha)) {
+      req.session.mensagem = { tipo: "erro", texto: "Senha incorreta." };
+      return res.redirect("/login");
+    }
+
+    // Salva o usuário na sessão
+    req.session.usuario = {
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+    };
+
+    res.redirect("/"); // ou outra rota após login
+  });
 });
 
-// Cadastro
-router.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+// ==========================
+// 📝 Rota de registro
+// =========================
+router.get("/register", (req, res) => {
+  res.render("register", { titulo: "Registrar" });
+});
 
-  if (!username || !password) {
-    req.session.mensagem = { tipo: "erro", texto: "Preencha todos os campos!" };
-    return res.redirect("/register");
-  }
+router.post("/register", (req, res) => {
+  const { nome, email, senha } = req.body;
 
-  try {
-    const hash = await bcrypt.hash(password, 10);
-    const stmt = db.prepare(
-      "INSERT INTO usuarios (username, password, perfil) VALUES (?, ?, 'usuario')"
-    );
-    stmt.run(username, hash, (err) => {
+  // Hash da senha
+  const senhaHash = bcrypt.hashSync(senha, 10);
+
+  db.run(
+    "INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?, ?, ?, ?)",
+    [nome, email, senhaHash, "usuario"], // perfil único
+    function (err) {
       if (err) {
         console.error(err);
-        req.session.mensagem = { tipo: "erro", texto: "Usuário já existe!" };
+        req.session.mensagem = { tipo: "erro", texto: "Erro ao criar usuário." };
         return res.redirect("/register");
       }
-      req.session.mensagem = { tipo: "sucesso", texto: "Cadastro realizado!" };
+
+      req.session.mensagem = { tipo: "sucesso", texto: "Usuário criado com sucesso!" };
       res.redirect("/login");
-    });
-    stmt.finalize();
-  } catch (err) {
-    console.error(err);
-    req.session.mensagem = { tipo: "erro", texto: "Erro interno." };
-    res.redirect("/register");
-  }
-});
-
-// Login
-router.post("/login", (req, res) => {
-  const { username, password } = req.body;
-
-  db.get(
-    "SELECT * FROM usuarios WHERE username = ?",
-    [username],
-    async (err, user) => {
-      if (err || !user) {
-        req.session.mensagem = { tipo: "erro", texto: "Usuário não encontrado." };
-        return res.redirect("/login");
-      }
-
-      const senhaCorreta = await bcrypt.compare(password, user.password);
-      if (!senhaCorreta) {
-        req.session.mensagem = { tipo: "erro", texto: "Senha incorreta." };
-        return res.redirect("/login");
-      }
-
-      // Login OK
-      req.session.usuario = user;
-
-      // Redirecionamento inteligente:
-      if (user.perfil === "admin") {
-        return res.redirect("/admin");
-      } else {
-        return res.redirect("/categorias");
-      }
     }
   );
 });
 
-// Logout
+// ==========================
+// 🔒 Logout
+// =========================
 router.get("/logout", (req, res) => {
-  req.session.destroy(() => res.redirect("/login"));
+  req.session.destroy();
+  res.redirect("/login");
 });
 
 module.exports = router;
