@@ -1,46 +1,48 @@
-const db = require("../config/db");
+const db = require("../db");
 
-class Categoria {
-  constructor({ id, nome }) {
-    this.id = id;
-    this.nome = nome;
-  }
+module.exports = {
+  async listar() {
+    return new Promise((resolve, reject) => {
+      db.all("SELECT * FROM categorias ORDER BY id DESC", [], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
+    });
+  },
 
-  static async listar() {
-    const [rows] = await db.query(
-      "SELECT id, nome FROM categorias ORDER BY nome"
-    );
-    return rows;
-  }
+  async buscarPorId(id) {
+    return new Promise((resolve, reject) => {
+      db.get("SELECT * FROM categorias WHERE id = ?", [id], (err, row) => {
+        if (err) return reject(err);
+        resolve(row);
+      });
+    });
+  },
 
-  static async buscarPorId(id) {
-    const [rows] = await db.query(
-      "SELECT id, nome FROM categorias WHERE id = ?",
-      [id]
-    );
-    return rows[0];
-  }
+  async criar(nome) {
+    return new Promise((resolve, reject) => {
+      db.run("INSERT INTO categorias (nome) VALUES (?)", [nome], function (err) {
+        if (err) return reject(err);
+        resolve({ id: this.lastID });
+      });
+    });
+  },
 
-  async salvar() {
-    const [result] = await db.execute(
-      "INSERT INTO categorias (nome) VALUES (?)",
-      [this.nome]
-    );
-    this.id = result.insertId;
-    return this;
-  }
+  async atualizar(id, nome) {
+    return new Promise((resolve, reject) => {
+      db.run("UPDATE categorias SET nome = ? WHERE id = ?", [nome, id], function (err) {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+  },
 
-  async atualizar() {
-    await db.execute("UPDATE categorias SET nome = ? WHERE id = ?", [
-      this.nome,
-      this.id,
-    ]);
-    return this;
-  }
-
-  static async deletar(id) {
-    await db.execute("DELETE FROM categorias WHERE id = ?", [id]);
-  }
-}
-
-module.exports = Categoria;
+  async excluir(id) {
+    return new Promise((resolve, reject) => {
+      db.run("DELETE FROM categorias WHERE id = ?", [id], function (err) {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+  },
+};
