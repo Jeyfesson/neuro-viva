@@ -23,10 +23,10 @@ class Noticia {
       db.all(
         `
         SELECT n.id, n.titulo, SUBSTR(n.conteudo, 1, 300) AS resumo,
-               n.data_publicacao, c.nome AS categoria, u.username AS autor
+               n.data_publicacao, c.nome AS categoria, u.nome AS autor
         FROM noticias n
-        LEFT JOIN categorias c ON n.id_categoria = c.id
-        LEFT JOIN usuarios u ON n.id_autor = u.id
+        LEFT JOIN categorias c ON n.categoria_id = c.id
+        LEFT JOIN usuarios u ON n.usuario_id = u.id
         ORDER BY n.data_publicacao DESC
         LIMIT ?
         `,
@@ -44,10 +44,10 @@ class Noticia {
     return new Promise((resolve, reject) => {
       db.get(
         `
-        SELECT n.*, c.nome AS categoria, u.username AS autor, u.id AS autor_id
+        SELECT n.*, c.nome AS categoria, u.nome AS autor, u.id AS autor_id
         FROM noticias n
-        LEFT JOIN categorias c ON n.id_categoria = c.id
-        LEFT JOIN usuarios u ON n.id_autor = u.id
+        LEFT JOIN categorias c ON n.categoria_id = c.id
+        LEFT JOIN usuarios u ON n.usuario_id = u.id
         WHERE n.id = ?
         `,
         [id],
@@ -65,11 +65,11 @@ class Noticia {
       db.all(
         `
         SELECT n.id, n.titulo, SUBSTR(n.conteudo, 1, 300) AS resumo,
-               n.data_publicacao, c.nome AS categoria, u.username AS autor
+               n.data_publicacao, c.nome AS categoria, u.nome AS autor
         FROM noticias n
-        LEFT JOIN categorias c ON n.id_categoria = c.id
+        LEFT JOIN categorias c ON n.categoria_id = c.id
         LEFT JOIN usuarios u ON n.id_autor = u.id
-        WHERE n.id_categoria = ?
+        WHERE n.categoria_id = ?
         ORDER BY n.data_publicacao DESC
         `,
         [id_categoria],
@@ -121,5 +121,7 @@ class Noticia {
     });
   }
 }
+
+
 
 module.exports = Noticia;
